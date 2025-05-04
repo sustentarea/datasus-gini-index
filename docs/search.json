@@ -1,0 +1,128 @@
+[
+  {
+    "objectID": "index.html#overview",
+    "href": "index.html#overview",
+    "title": "",
+    "section": "Overview",
+    "text": "Overview\nThis report provides a reproducible pipeline for processing DATASUS data on the Gini Index of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010. The main goal is to provide a transparent and reliable workflow for processing these data, supporting research and informed public policy decisions."
+  },
+  {
+    "objectID": "index.html#data-availability",
+    "href": "index.html#data-availability",
+    "title": "",
+    "section": "Data Availability",
+    "text": "Data Availability\nThe processed data are available in both csv and rds formats via a dedicated repository on the Open Science Framework (OSF), accessible here. A metadata file is included alongside the validated data. You can also access these files directly from R using the osfr package.\nA backup copy of the raw data is also available in OSF. You can access it here."
+  },
+  {
+    "objectID": "index.html#methods",
+    "href": "index.html#methods",
+    "title": "",
+    "section": "Methods",
+    "text": "Methods\nSource of Data\nThe data used in this report were sourced from the DATASUS platform, which provides data on the Gini Index of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010 (Instituto de Pesquisas Econômicas e Aplicadas & Instituto Brasileiro de Geografia e Estatística, n.d.). These data are derived from the Population Census conducted by the Brazilian Institute of Geography and Statistics (IBGE).\nFor technical information about the raw dataset, see the official technical note (in Portuguese).\nData Munging\nThe data munging followed the data science workflow outlined by Wickham et al. (2023), as illustrated in Figure 1. All processes were made using the Quarto publishing system (Allaire et al., n.d.), the R programming language (R Core Team, n.d.) and several R packages.\nThe tidyverse and rOpenSci peer-reviewed package ecosystem and other R packages adherents of the tidy tools manifesto (Wickham, 2023) were prioritized. All processes were made in order to provide result transparency and reproducibility.\n\n\nFigure 1: Data science workflow created by Wickham, Çetinkaya-Runde, and Grolemund.\n\n\nSource: Reproduced from Wickham et al. (2023).\n\n\n\nCode Style\nThe Tidyverse code style guide and design principles were followed to ensure consistency and enhance readability.\nReproducibility\nThe pipeline is fully reproducible and can be run again at any time. See the README file in the code repository to learn how to run them."
+  },
+  {
+    "objectID": "index.html#setting-the-environment",
+    "href": "index.html#setting-the-environment",
+    "title": "",
+    "section": "Setting the Environment",
+    "text": "Setting the Environment\n\nlibrary(brandr)\nlibrary(dplyr)\nlibrary(ggplot2)\nlibrary(here)\nlibrary(httr2)\nlibrary(janitor)\nlibrary(labelled)\nlibrary(orbis) # github.com/danielvartan/orbis\nlibrary(osfr)\nlibrary(plotr) # github.com/danielvartan/plotr\nlibrary(readr)\nlibrary(tidyr)"
+  },
+  {
+    "objectID": "index.html#downloading-the-data",
+    "href": "index.html#downloading-the-data",
+    "title": "",
+    "section": "Downloading the Data",
+    "text": "Downloading the Data\n\nCodeif (!dir.exists(here::here(\"data\"))) dir.create(\"data\")\n\n\n\nfile &lt;- here::here(\"data\", paste0(\"raw.csv\"))\n\n\"http://tabnet.datasus.gov.br/cgi/ibge/censo/bases/ginibr.csv\" |&gt;\n  httr2::request() |&gt;\n  httr2::req_progress() |&gt;\n  httr2::req_perform(file)"
+  },
+  {
+    "objectID": "index.html#reading-the-data",
+    "href": "index.html#reading-the-data",
+    "title": "",
+    "section": "Reading the Data",
+    "text": "Reading the Data\n\ndata &lt;-\n  file |&gt;\n  readr::read_delim(\n    delim = \";\",\n    col_names = FALSE,\n    col_types = readr::cols(.default = \"c\"),\n    trim_ws = TRUE,\n    skip = 3\n  ) |&gt;\n  dplyr::slice(1:5565) |&gt;\n  dplyr::mutate(\n    dplyr::across(\n      .cols = dplyr::everything(),\n      .fns = ~ iconv(.x, from = \"latin1\", to = \"UTF-8\")\n    )\n  )\n\n\ndata |&gt; dplyr::glimpse()\n#&gt; Rows: 5,565\n#&gt; Columns: 4\n#&gt; $ X1 &lt;chr&gt; \"110001 Alta Floresta D'Oeste\", \"110037 Alto Alegre dos Parecis\"…\n#&gt; $ X2 &lt;chr&gt; \"0,5983\", \"...\", \"...\", \"0,569\", \"0,5827\", \"...\", \"0,6527\", \"...…\n#&gt; $ X3 &lt;chr&gt; \"0,5868\", \"0,508\", \"0,6256\", \"0,6534\", \"0,5927\", \"0,6474\", \"0,58…\n#&gt; $ X4 &lt;chr&gt; \"0,5893\", \"0,5491\", \"0,5417\", \"0,5355\", \"0,5496\", \"0,5017\", \"0,5…"
+  },
+  {
+    "objectID": "index.html#renaming-the-data",
+    "href": "index.html#renaming-the-data",
+    "title": "",
+    "section": "Renaming the Data",
+    "text": "Renaming the Data\n\ndata &lt;-\n  data |&gt;\n  janitor::clean_names() |&gt;\n  dplyr::rename(\n    municipality = x1,\n    x1991 = x2,\n    x2000 = x3,\n    x2010 = x4\n  )\n\n\ndata |&gt; dplyr::glimpse()\n#&gt; Rows: 5,565\n#&gt; Columns: 4\n#&gt; $ municipality &lt;chr&gt; \"110001 Alta Floresta D'Oeste\", \"110037 Alto Alegre do…\n#&gt; $ x1991        &lt;chr&gt; \"0,5983\", \"...\", \"...\", \"0,569\", \"0,5827\", \"...\", \"0,6…\n#&gt; $ x2000        &lt;chr&gt; \"0,5868\", \"0,508\", \"0,6256\", \"0,6534\", \"0,5927\", \"0,64…\n#&gt; $ x2010        &lt;chr&gt; \"0,5893\", \"0,5491\", \"0,5417\", \"0,5355\", \"0,5496\", \"0,5…"
+  },
+  {
+    "objectID": "index.html#tidying-the-data",
+    "href": "index.html#tidying-the-data",
+    "title": "",
+    "section": "Tidying the Data",
+    "text": "Tidying the Data\n\ndata &lt;-\n  data |&gt;\n  dplyr::mutate(\n    dplyr::across(\n      .cols = dplyr::starts_with(\"x\"),\n      .fns = ~ dplyr::case_when(\n        .x == \"...\" ~ NA,\n        TRUE ~ .x |&gt; stringr::str_replace_all(\",\", \".\")\n      )\n    ),\n    dplyr::across(\n      .cols = dplyr::starts_with(\"x\"),\n      .fns = as.numeric\n    )\n  ) |&gt;\n  tidyr::pivot_longer(\n    cols = starts_with(\"x\"),\n    names_to = \"year\",\n    values_to = \"gini_index\"\n  ) |&gt;\n  dplyr::mutate(\n    year =\n      year |&gt;\n      stringr::str_remove(\"x\") |&gt;\n      as.integer(),\n    municipality_code =\n      municipality |&gt;\n      stringr::str_extract(\"\\\\d*\") |&gt;\n      as.integer(),\n    municipality =\n      municipality |&gt;\n      stringr::str_remove(\"\\\\d*\") |&gt;\n      stringr::str_trim()\n  )|&gt;\n  dplyr::relocate(\n    year,\n    municipality_code,\n    .before = municipality\n  )\n\n\ndata |&gt; dplyr::glimpse()\n#&gt; Rows: 16,695\n#&gt; Columns: 4\n#&gt; $ year              &lt;int&gt; 1991, 2000, 2010, 1991, 2000, 2010, 1991, 2000, 2…\n#&gt; $ municipality_code &lt;int&gt; 110001, 110001, 110001, 110037, 110037, 110037, 1…\n#&gt; $ municipality      &lt;chr&gt; \"Alta Floresta D'Oeste\", \"Alta Floresta D'Oeste\",…\n#&gt; $ gini_index        &lt;dbl&gt; 0.5983, 0.5868, 0.5893, NA, 0.5080, 0.5491, NA, 0…"
+  },
+  {
+    "objectID": "index.html#adding-state-and-region-data",
+    "href": "index.html#adding-state-and-region-data",
+    "title": "",
+    "section": "Adding State and Region Data",
+    "text": "Adding State and Region Data\n\nbrazil_municipalities &lt;- orbis::get_brazil_municipality(\n  year = plotr:::get_closest_geobr_year(2000, type = \"municipality\")\n)\n\n\ndata &lt;-\n  data |&gt;\n  dplyr::select(-municipality) |&gt;\n  dplyr::left_join(\n    brazil_municipalities |&gt;\n      dplyr::mutate(\n        municipality_code =\n          municipality_code |&gt;\n          stringr::str_sub(end = -2) |&gt;\n          as.integer()\n      ),\n    by = \"municipality_code\"\n  ) |&gt;\n  dplyr::relocate(\n    year,\n    region_code,\n    region,\n    state_code,\n    state,\n    federal_unit,\n    municipality_code,\n    municipality\n  )\n\n\ndata |&gt; dplyr::glimpse()\n#&gt; Rows: 16,695\n#&gt; Columns: 9\n#&gt; $ year              &lt;int&gt; 1991, 2000, 2010, 1991, 2000, 2010, 1991, 2000, 2…\n#&gt; $ region_code       &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1…\n#&gt; $ region            &lt;chr&gt; \"North\", \"North\", \"North\", \"North\", \"North\", \"Nor…\n#&gt; $ state_code        &lt;int&gt; 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 1…\n#&gt; $ state             &lt;chr&gt; \"Rondônia\", \"Rondônia\", \"Rondônia\", \"Rondônia\", \"…\n#&gt; $ federal_unit      &lt;chr&gt; \"RO\", \"RO\", \"RO\", \"RO\", \"RO\", \"RO\", \"RO\", \"RO\", \"…\n#&gt; $ municipality_code &lt;int&gt; 110001, 110001, 110001, 110037, 110037, 110037, 1…\n#&gt; $ municipality      &lt;chr&gt; \"Alta Floresta D'Oeste\", \"Alta Floresta D'Oeste\",…\n#&gt; $ gini_index        &lt;dbl&gt; 0.5983, 0.5868, 0.5893, NA, 0.5080, 0.5491, NA, 0…"
+  },
+  {
+    "objectID": "index.html#validating-the-data",
+    "href": "index.html#validating-the-data",
+    "title": "",
+    "section": "Validating the Data",
+    "text": "Validating the Data\n\ndata &lt;-\n  data |&gt;\n  dplyr::mutate(\n    gini_index = dplyr::case_when(\n      !dplyr::between(gini_index, 0, 1) ~ NA,\n      TRUE ~ gini_index\n    )\n  )\n\n\ndata |&gt; dplyr::glimpse()\n#&gt; Rows: 16,695\n#&gt; Columns: 9\n#&gt; $ year              &lt;int&gt; 1991, 2000, 2010, 1991, 2000, 2010, 1991, 2000, 2…\n#&gt; $ region_code       &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1…\n#&gt; $ region            &lt;chr&gt; \"North\", \"North\", \"North\", \"North\", \"North\", \"Nor…\n#&gt; $ state_code        &lt;int&gt; 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 1…\n#&gt; $ state             &lt;chr&gt; \"Rondônia\", \"Rondônia\", \"Rondônia\", \"Rondônia\", \"…\n#&gt; $ federal_unit      &lt;chr&gt; \"RO\", \"RO\", \"RO\", \"RO\", \"RO\", \"RO\", \"RO\", \"RO\", \"…\n#&gt; $ municipality_code &lt;int&gt; 110001, 110001, 110001, 110037, 110037, 110037, 1…\n#&gt; $ municipality      &lt;chr&gt; \"Alta Floresta D'Oeste\", \"Alta Floresta D'Oeste\",…\n#&gt; $ gini_index        &lt;dbl&gt; 0.5983, 0.5868, 0.5893, NA, 0.5080, 0.5491, NA, 0…"
+  },
+  {
+    "objectID": "index.html#arranging-the-data",
+    "href": "index.html#arranging-the-data",
+    "title": "",
+    "section": "Arranging the Data",
+    "text": "Arranging the Data\n\ndata &lt;-\n  data |&gt;\n  dplyr::arrange(\n    year,\n    region_code,\n    state_code,\n    municipality_code\n  )\n\n\ndata |&gt; dplyr::glimpse()\n#&gt; Rows: 16,695\n#&gt; Columns: 9\n#&gt; $ year              &lt;int&gt; 1991, 1991, 1991, 1991, 1991, 1991, 1991, 1991, 1…\n#&gt; $ region_code       &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1…\n#&gt; $ region            &lt;chr&gt; \"North\", \"North\", \"North\", \"North\", \"North\", \"Nor…\n#&gt; $ state_code        &lt;int&gt; 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 1…\n#&gt; $ state             &lt;chr&gt; \"Rondônia\", \"Rondônia\", \"Rondônia\", \"Rondônia\", \"…\n#&gt; $ federal_unit      &lt;chr&gt; \"RO\", \"RO\", \"RO\", \"RO\", \"RO\", \"RO\", \"RO\", \"RO\", \"…\n#&gt; $ municipality_code &lt;int&gt; 110001, 110002, 110003, 110004, 110005, 110006, 1…\n#&gt; $ municipality      &lt;chr&gt; \"Alta Floresta D'Oeste\", \"Ariquemes\", \"Cabixi\", \"…\n#&gt; $ gini_index        &lt;dbl&gt; 0.5983, 0.5827, 0.6527, 0.6800, 0.5958, 0.6229, N…"
+  },
+  {
+    "objectID": "index.html#data-dictionary",
+    "href": "index.html#data-dictionary",
+    "title": "",
+    "section": "Data Dictionary",
+    "text": "Data Dictionary\n\nCodemetadata &lt;-\n  data |&gt;\n  labelled::`var_label&lt;-`(\n    list(\n      year = \"Census year\",\n      region_code = \"IBGE code of the region\",\n      region = \"Name of the region\",\n      state_code = \"IBGE code of the state\",\n      state = \"Name of the state\",\n      federal_unit = \"Name of the federal unit\",\n      municipality_code = \"IBGE code of the municipality\",\n      municipality = \"Name of the municipality\",\n      gini_index = \"Gini Index of per capita household income\"\n    )\n  ) |&gt;\n  labelled::generate_dictionary(details = \"full\") |&gt;\n  labelled::convert_list_columns_to_character()\n\n\n\nCodemetadata\n\n\n  \n\n\n\n\nCodedata"
+  },
+  {
+    "objectID": "index.html#saving-the-valid-data",
+    "href": "index.html#saving-the-valid-data",
+    "title": "",
+    "section": "Saving the Valid Data",
+    "text": "Saving the Valid Data\nData\n\nCodedata |&gt; readr::write_csv(here::here(\"data\", \"valid.csv\"))\n\n\n\nCodedata |&gt; readr::write_rds(here::here(\"data\", \"valid.rds\"))\n\n\nMetadata\n\nCodemetadata |&gt; readr::write_csv(here::here(\"data\", \"metadata.csv\"))\n\n\n\nCodemetadata |&gt; readr::write_rds(here::here(\"data\", \"metadata.rds\"))"
+  },
+  {
+    "objectID": "index.html#visualizing-the-data",
+    "href": "index.html#visualizing-the-data",
+    "title": "",
+    "section": "Visualizing the Data",
+    "text": "Visualizing the Data\nThe Gini Index is a measure of income inequality within a population, ranging from 0 to 1. A value close to 0 indicates a perfectly equal income distribution, while a value close to 1 indicates total inequality.\n\nCodebrand_div_palette &lt;- function(x) {\n  brandr:::make_color_ramp(\n    n_prop = x,\n    colors = c(\n      brandr::get_brand_color(\"dark-red-triadic-blue\"),\n      # brandr::get_brand_color(\"white\"),\n      brandr::get_brand_color_mix(\n        position = 950,\n        color_1 = \"dark-red\",\n        color_2 = \"dark-red-triadic-blue\",\n        alpha = 0.5\n      ),\n      brandr::get_brand_color(\"dark-red\")\n    )\n  )\n}\n\n\n\nCodedata |&gt;\n  dplyr::filter(year == 2010) |&gt;\n  tidyr::drop_na(gini_index) |&gt;\n  plotr:::plot_hist(\n    col = \"gini_index\",\n    density_line_color = \"red\",\n    x_label = \"Gini Index\",\n    print = FALSE\n  ) +\n  ggplot2::xlim(0, 1) +\n  ggplot2::labs(\n    title = paste0(\n      \"Gini Index of Per Capita Household Income by Brazilian Municipality\"\n    ),\n    subtitle = \"Year: 2010\",\n    caption = \"Source: DATASUS/IPEA/IBGE\"\n  )\n\n\n\n\n\n\n\n\nCodedata |&gt;\n  dplyr::filter(year == 2010) |&gt;\n  tidyr::drop_na(gini_index) |&gt;\n  plotr:::plot_brazil_municipality(\n    col_fill = \"gini_index\",\n    col_code = \"municipality_code\",\n    year = plotr:::get_closest_geobr_year(2010, type = \"municipality\"),\n    comparable_areas = FALSE,\n    reverse = TRUE,\n    limits = c(0, 1),\n    breaks = seq(0, 1, 0.25),\n    palette = brand_div_palette,\n    print = FALSE\n  ) +\n  ggplot2::labs(\n    title = paste0(\n      \"Gini Index of Per Capita Household Income by Brazilian Municipality\"\n    ),\n    subtitle = \"Year: 2010\",\n    caption = \"Source: DATASUS/IPEA/IBGE\"\n  )"
+  },
+  {
+    "objectID": "index.html#acknowledgments",
+    "href": "index.html#acknowledgments",
+    "title": "",
+    "section": "Acknowledgments",
+    "text": "Acknowledgments\n\nThis work is part of the Sustentarea Research and Extension Group’s project: Global syndemic: The impact of anthropogenic climate change on the health and nutrition of children under five years old attended by Brazil’s public health system (SUS).\n\nThis work was supported by the Conselho Nacional de Desenvolvimento Científico e Tecnológico - Brazil (CNPq)."
+  },
+  {
+    "objectID": "index.html#how-to-cite",
+    "href": "index.html#how-to-cite",
+    "title": "",
+    "section": "How to Cite",
+    "text": "How to Cite\nTo cite this work, please use the following format:\nVartanian, D., & Carvalho, A. M. (2025). A reproducible pipeline for processing DATASUS data on the Gini Index of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010 [Report]. Sustentarea Research and Extension Group at the University of São Paulo. https://sustentarea.github.io/datasus-gini-index\nA BibTeX entry for LaTeX users is\n@techreport{vartanian2025,\n  title = {A reproducible pipeline for processing DATASUS data on the Gini Index of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010},\n  author = {{Daniel Vartanian} and {Aline Martins de Carvalho}},\n  year = {2025},\n  address = {São Paulo},\n  institution = {Sustentarea Research and Extension Group at the University of São Paulo},\n  langid = {en},\n  url = {https://sustentarea.github.io/datasus-gini-index}\n}"
+  },
+  {
+    "objectID": "index.html#license",
+    "href": "index.html#license",
+    "title": "",
+    "section": "License",
+    "text": "License\n\n\n\nThe content is licensed under CC0 1.0 Universal, placing these materials in the public domain. You may freely copy, modify, distribute, and use this work, even for commercial purposes, without permission or attribution."
+  },
+  {
+    "objectID": "index.html#references",
+    "href": "index.html#references",
+    "title": "",
+    "section": "References",
+    "text": "References\n\n\nAllaire, J. J., Teague, C., Xie, Y., & Dervieux, C. (n.d.). Quarto [Computer software]. Zenodo. https://doi.org/10.5281/ZENODO.5960048\n\n\nInstituto de Pesquisas Econômicas e Aplicadas, & Instituto Brasileiro de Geografia e Estatística. (n.d.). Índice de Gini da renda domiciliar per capita segundo município – Período: 1991, 2000 e 2010 [Gini index of per capita household income by municipality – Period: 1991, 2000, and 2010] [Data set]. DATASUS - Tabnet. Retrieved November 16, 2023, from http://tabnet.datasus.gov.br/cgi/ibge/censo/cnv/ginibr.def\n\n\nR Core Team. (n.d.). R: A language and environment for statistical computing [Computer software]. R Foundation for Statistical Computing. https://www.R-project.org\n\n\nWickham, H. (2023). The tidy tools manifesto. Tidyverse. https://tidyverse.tidyverse.org/articles/manifesto.html\n\n\nWickham, H., Çetinkaya-Rundel, M., & Grolemund, G. (2023). R for data science: Import, tidy, transform, visualize, and model data (2nd ed.). O’Reilly Media. https://r4ds.hadley.nz"
+  }
+]

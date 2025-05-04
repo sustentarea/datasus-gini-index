@@ -1,0 +1,491 @@
+```{r}
+#| label: setup
+#| include: false
+
+source(here::here("R", "_setup.R"))
+```
+
+<!-- badges: start -->
+[![Project Status: Inactive – The project has reached a stable, usable state but is no longer being actively developed; support/maintenance will be provided as time allows.](https://img.shields.io/badge/Repo%20Status-Inactive-A6A82D.svg)](https://www.repostatus.org/#inactive)
+[![OSF
+DOI](https://img.shields.io/badge/OSF-10.17605/OSF.IO/UCMS6-1284C5.svg)](https://doi.org/10.17605/OSF.IO/UCMS6)
+[![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](http://creativecommons.org/publicdomain/zero/1.0/)
+<!-- badges: end -->
+
+## Overview
+
+This report provides a reproducible pipeline for processing [DATASUS](https://datasus.saude.gov.br/) data on the [Gini Index](https://en.wikipedia.org/wiki/Gini_coefficient) of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010. The main goal is to provide a transparent and reliable workflow for processing these data, supporting research and informed public policy decisions.
+
+## Data Availability
+
+The processed data are available in both `csv` and `rds` formats via a dedicated repository on the Open Science Framework ([OSF](https://osf.io/)), accessible [here](https://doi.org/10.17605/OSF.IO/WHJ92). A metadata file is included alongside the validated data. You can also access these files directly from R using the [`osfr`](https://docs.ropensci.org/osfr/) package.
+
+A backup copy of the raw data is also available in OSF. You can access it [here](https://doi.org/10.17605/OSF.IO/CYWPU).
+
+## Methods
+
+### Source of Data
+
+The data used in this report were sourced from the [DATASUS](https://datasus.saude.gov.br/) platform, which provides data on the [Gini Index](https://en.wikipedia.org/wiki/Gini_coefficient) of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010 [@datasusa]. These data are derived from the Population Census conducted by the Brazilian Institute of Geography and Statistics ([IBGE](https://www.ibge.gov.br/)).
+
+For technical information about the raw dataset, see the official [technical note](http://tabnet.datasus.gov.br/cgi/ibge/censo/Indice_Gini_Renda_Domiciliar.pdf) (in Portuguese).
+
+### Data Munging
+
+The data munging followed the data science workflow outlined by @wickham2023e, as illustrated in [@fig-wickham-at-al-2024-figure-1]. All processes were made using the [Quarto](https://quarto.org/) publishing system [@allaire], the [R programming language](https://www.r-project.org/) [@rcoreteama] and several R packages.
+
+The [tidyverse](https://www.tidyverse.org/) and [rOpenSci](https://ropensci.org/) peer-reviewed package ecosystem and other R packages adherents of the tidy tools manifesto [@wickham2023c] were prioritized. All processes were made in order to provide result transparency and reproducibility.
+
+::: {#fig-wickham-at-al-2024-figure-1}
+![](images/wickham-at-al-2024-figure-1.png){width=75%}
+
+[Source: Reproduced from @wickham2023e.]{.legend}
+
+Data science workflow created by Wickham, Çetinkaya-Runde, and Grolemund.
+:::
+
+### Code Style
+
+The Tidyverse [code style guide](https://style.tidyverse.org/) and [design principles](https://design.tidyverse.org/) were followed to ensure consistency and enhance readability.
+
+### Reproducibility
+
+The pipeline is fully reproducible and can be run again at any time. See the [README](hhttps://github.com/danielvartan/datasus-gini-index/blob/main/README.md) file in the code repository to learn how to run them.
+
+## Setting the Environment
+
+```{r}
+#| eval: false
+#| code-fold: false
+
+library(brandr)
+library(dplyr)
+library(ggplot2)
+library(here)
+library(httr2)
+library(janitor)
+library(labelled)
+library(orbis) # github.com/danielvartan/orbis
+library(osfr)
+library(plotr) # github.com/danielvartan/plotr
+library(readr)
+library(tidyr)
+```
+
+```{r}
+#| include: false
+
+library(dplyr)
+library(ggplot2)
+```
+
+## Downloading the Data
+
+```{r}
+if (!dir.exists(here::here("data"))) dir.create("data")
+```
+
+```{r}
+#| code-fold: false
+#| output: false
+
+file <- here::here("data", paste0("raw.csv"))
+
+"http://tabnet.datasus.gov.br/cgi/ibge/censo/bases/ginibr.csv" |>
+  httr2::request() |>
+  httr2::req_progress() |>
+  httr2::req_perform(file)
+```
+
+## Reading the Data
+
+```{r}
+#| code-fold: false
+
+data <-
+  file |>
+  readr::read_delim(
+    delim = ";",
+    col_names = FALSE,
+    col_types = readr::cols(.default = "c"),
+    trim_ws = TRUE,
+    skip = 3
+  ) |>
+  dplyr::slice(1:5565) |>
+  dplyr::mutate(
+    dplyr::across(
+      .cols = dplyr::everything(),
+      .fns = ~ iconv(.x, from = "latin1", to = "UTF-8")
+    )
+  )
+```
+
+```{r}
+#| code-fold: false
+
+data |> dplyr::glimpse()
+```
+
+## Renaming the Data
+
+```{r}
+#| code-fold: false
+
+data <-
+  data |>
+  janitor::clean_names() |>
+  dplyr::rename(
+    municipality = x1,
+    x1991 = x2,
+    x2000 = x3,
+    x2010 = x4
+  )
+```
+
+```{r}
+#| code-fold: false
+
+data |> dplyr::glimpse()
+```
+
+## Tidying the Data
+
+```{r}
+#| code-fold: false
+
+data <-
+  data |>
+  dplyr::mutate(
+    dplyr::across(
+      .cols = dplyr::starts_with("x"),
+      .fns = ~ dplyr::case_when(
+        .x == "..." ~ NA,
+        TRUE ~ .x |> stringr::str_replace_all(",", ".")
+      )
+    ),
+    dplyr::across(
+      .cols = dplyr::starts_with("x"),
+      .fns = as.numeric
+    )
+  ) |>
+  tidyr::pivot_longer(
+    cols = starts_with("x"),
+    names_to = "year",
+    values_to = "gini_index"
+  ) |>
+  dplyr::mutate(
+    year =
+      year |>
+      stringr::str_remove("x") |>
+      as.integer(),
+    municipality_code =
+      municipality |>
+      stringr::str_extract("\\d*") |>
+      as.integer(),
+    municipality =
+      municipality |>
+      stringr::str_remove("\\d*") |>
+      stringr::str_trim()
+  )|>
+  dplyr::relocate(
+    year,
+    municipality_code,
+    .before = municipality
+  )
+```
+
+```{r}
+#| code-fold: false
+
+data |> dplyr::glimpse()
+```
+
+## Adding State and Region Data
+
+```{r}
+#| code-fold: false
+
+brazil_municipalities <- orbis::get_brazil_municipality(
+  year = plotr:::get_closest_geobr_year(2000, type = "municipality")
+)
+```
+
+```{r}
+#| code-fold: false
+
+data <-
+  data |>
+  dplyr::select(-municipality) |>
+  dplyr::left_join(
+    brazil_municipalities |>
+      dplyr::mutate(
+        municipality_code =
+          municipality_code |>
+          stringr::str_sub(end = -2) |>
+          as.integer()
+      ),
+    by = "municipality_code"
+  ) |>
+  dplyr::relocate(
+    year,
+    region_code,
+    region,
+    state_code,
+    state,
+    federal_unit,
+    municipality_code,
+    municipality
+  )
+```
+
+```{r}
+#| code-fold: false
+
+data |> dplyr::glimpse()
+```
+
+## Validating the Data
+
+```{r}
+#| code-fold: false
+
+data <-
+  data |>
+  dplyr::mutate(
+    gini_index = dplyr::case_when(
+      !dplyr::between(gini_index, 0, 1) ~ NA,
+      TRUE ~ gini_index
+    )
+  )
+```
+
+```{r}
+#| code-fold: false
+
+data |> dplyr::glimpse()
+```
+
+## Arranging the Data
+
+```{r}
+#| code-fold: false
+
+data <-
+  data |>
+  dplyr::arrange(
+    year,
+    region_code,
+    state_code,
+    municipality_code
+  )
+```
+
+```{r}
+#| code-fold: false
+
+data |> dplyr::glimpse()
+```
+
+## Data Dictionary
+
+```{r}
+metadata <-
+  data |>
+  labelled::`var_label<-`(
+    list(
+      year = "Census year",
+      region_code = "IBGE code of the region",
+      region = "Name of the region",
+      state_code = "IBGE code of the state",
+      state = "Name of the state",
+      federal_unit = "Name of the federal unit",
+      municipality_code = "IBGE code of the municipality",
+      municipality = "Name of the municipality",
+      gini_index = "Gini Index of per capita household income"
+    )
+  ) |>
+  labelled::generate_dictionary(details = "full") |>
+  labelled::convert_list_columns_to_character()
+```
+
+```{r}
+metadata
+```
+
+```{r}
+data
+```
+
+## Saving the Valid Data
+
+### Data
+
+```{r}
+data |> readr::write_csv(here::here("data", "valid.csv"))
+```
+
+```{r}
+data |> readr::write_rds(here::here("data", "valid.rds"))
+```
+
+### Metadata
+
+```{r}
+metadata |> readr::write_csv(here::here("data", "metadata.csv"))
+```
+
+```{r}
+metadata |> readr::write_rds(here::here("data", "metadata.rds"))
+```
+
+<!-- Uploading the data to OSF (optional) -->
+<!-- Only repository administrators can upload data to OSF. -->
+<!-- To enable uploads, set your `OSF_PAT` environment variable with a valid OSF personal access token. -->
+
+```{r}
+#| eval: false
+#| include: false
+
+Sys.getenv("OSF_PAT") |> osfr::osf_auth()
+```
+
+```{r}
+#| eval: false
+#| include: false
+
+osf_id <- paste0("https://osf.io/", "whj92")
+
+osfr::osf_upload(
+  x = osfr::osf_retrieve_node(osf_id),
+  path = c(
+    here::here("data", "valid.csv"),
+    here::here("data", "valid.rds"),
+    here::here("data", "metadata.csv"),
+    here::here("data", "metadata.rds")
+  ),
+  conflicts = "overwrite"
+)
+```
+
+## Visualizing the Data
+
+The [Gini Index](https://en.wikipedia.org/wiki/Gini_coefficient) is a measure of income inequality within a population, ranging from 0 to 1. A value close to 0 indicates a perfectly equal income distribution, while a value close to 1 indicates total inequality.
+
+```{r}
+brand_div_palette <- function(x) {
+  brandr:::make_color_ramp(
+    n_prop = x,
+    colors = c(
+      brandr::get_brand_color("dark-red-triadic-blue"),
+      # brandr::get_brand_color("white"),
+      brandr::get_brand_color_mix(
+        position = 950,
+        color_1 = "dark-red",
+        color_2 = "dark-red-triadic-blue",
+        alpha = 0.5
+      ),
+      brandr::get_brand_color("dark-red")
+    )
+  )
+}
+```
+
+```{r}
+#| warning: false
+
+data |>
+  dplyr::filter(year == 2010) |>
+  tidyr::drop_na(gini_index) |>
+  plotr:::plot_hist(
+    col = "gini_index",
+    density_line_color = "red",
+    x_label = "Gini Index",
+    print = FALSE
+  ) +
+  ggplot2::xlim(0, 1) +
+  ggplot2::labs(
+    title = paste0(
+      "Gini Index of Per Capita Household Income by Brazilian Municipality"
+    ),
+    subtitle = "Year: 2010",
+    caption = "Source: DATASUS/IPEA/IBGE"
+  )
+```
+
+```{r}
+#| fig-height: 6
+#| fig-width: 8
+#| warning: false
+
+data |>
+  dplyr::filter(year == 2010) |>
+  tidyr::drop_na(gini_index) |>
+  plotr:::plot_brazil_municipality(
+    col_fill = "gini_index",
+    col_code = "municipality_code",
+    year = plotr:::get_closest_geobr_year(2010, type = "municipality"),
+    comparable_areas = FALSE,
+    reverse = TRUE,
+    limits = c(0, 1),
+    breaks = seq(0, 1, 0.25),
+    palette = brand_div_palette,
+    print = FALSE
+  ) +
+  ggplot2::labs(
+    title = paste0(
+      "Gini Index of Per Capita Household Income by Brazilian Municipality"
+    ),
+    subtitle = "Year: 2010",
+    caption = "Source: DATASUS/IPEA/IBGE"
+  )
+```
+
+```{r}
+#| eval: false
+#| include: false
+
+grDevices::dev.off()
+```
+
+## Acknowledgments
+
+![](images/sustentarea-icon.svg){style="width: 15%;"}
+
+This work is part of the [Sustentarea](https://www.fsp.usp.br/sustentarea) Research and Extension Group's project: *Global syndemic: The impact of anthropogenic climate change on the health and nutrition of children under five years old attended by Brazil's public health system (SUS)*.
+
+![](images/cnpq-logo.svg){style="width: 25%;"}
+
+This work was supported by the Conselho Nacional de Desenvolvimento Científico e Tecnológico - Brazil ([CNPq](https://www.gov.br/cnpq/)).
+
+## How to Cite
+
+To cite this work, please use the following format:
+
+Vartanian, D., & Carvalho, A. M. (2025). *A reproducible pipeline for processing DATASUS data on the Gini Index of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010* \[Report\]. Sustentarea Research and Extension Group at the University of São Paulo. <https://sustentarea.github.io/datasus-gini-index>
+
+A BibTeX entry for LaTeX users is
+
+```
+@techreport{vartanian2025,
+  title = {A reproducible pipeline for processing DATASUS data on the Gini Index of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010},
+  author = {{Daniel Vartanian} and {Aline Martins de Carvalho}},
+  year = {2025},
+  address = {São Paulo},
+  institution = {Sustentarea Research and Extension Group at the University of São Paulo},
+  langid = {en},
+  url = {https://sustentarea.github.io/datasus-gini-index}
+}
+```
+
+## License
+
+::: {style="text-align: left;"}
+[![](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](http://creativecommons.org/publicdomain/zero/1.0/)
+:::
+
+The content is licensed under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), placing these materials in the public domain. You may freely copy, modify, distribute, and use this work, even for commercial purposes, without permission or attribution.
+
+## References {.unnumbered}
+
+::: {#refs}
+:::
