@@ -8,7 +8,7 @@ source(here::here("R", "_setup.R"))
 <!-- badges: start -->
 [![Project Status: Inactive – The project has reached a stable, usable state but is no longer being actively developed; support/maintenance will be provided as time allows.](https://img.shields.io/badge/Repo%20Status-Inactive-A6A82D.svg)](https://www.repostatus.org/#inactive)
 [![OSF
-DOI](https://img.shields.io/badge/OSF-10.17605/OSF.IO/UCMS6-1284C5.svg)](https://doi.org/10.17605/OSF.IO/UCMS6)
+DOI](https://img.shields.io/badge/OSF-10.17605/OSF.IO/WHJ92-1284C5.svg)](https://doi.org/10.17605/OSF.IO/WHJ92)
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](http://creativecommons.org/publicdomain/zero/1.0/)
 <!-- badges: end -->
 
@@ -50,7 +50,7 @@ The Tidyverse [code style guide](https://style.tidyverse.org/) and [design princ
 
 ### Reproducibility
 
-The pipeline is fully reproducible and can be run again at any time. See the [README](hhttps://github.com/danielvartan/datasus-gini-index/blob/main/README.md) file in the code repository to learn how to run them.
+The pipeline is fully reproducible and can be run again at any time. See the [README](https://github.com/danielvartan/datasus-gini-index/blob/main/README.md) file in the code repository to learn how to run them.
 
 ## Setting the Environment
 
@@ -186,7 +186,7 @@ data <-
       municipality |>
       stringr::str_remove("\\d*") |>
       stringr::str_trim()
-  )|>
+  ) |>
   dplyr::relocate(
     year,
     municipality_code,
@@ -483,7 +483,7 @@ A BibTeX entry for LaTeX users is
 [![](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](http://creativecommons.org/publicdomain/zero/1.0/)
 :::
 
-The content is licensed under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), placing these materials in the public domain. You may freely copy, modify, distribute, and use this work, even for commercial purposes, without permission or attribution.
+This content is licensed under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), placing these materials in the public domain. You may freely copy, modify, distribute, and use this work, even for commercial purposes, without permission or attribution.
 
 ## References {.unnumbered}
 
