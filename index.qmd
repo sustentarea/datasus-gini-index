@@ -353,7 +353,7 @@ Sys.getenv("OSF_PAT") |> osfr::osf_auth()
 #| eval: false
 #| include: false
 
-osf_id <- paste0("https://osf.io/", "whj92")
+osf_id <- paste0("https://osf.io/", "vdcfs")
 
 osfr::osf_upload(
   x = osfr::osf_retrieve_node(osf_id),
