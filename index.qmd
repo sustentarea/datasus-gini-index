@@ -7,16 +7,19 @@ source(here::here("R", "_setup.R"))
 
 <!-- badges: start -->
 [![Project Status: Inactive – The project has reached a stable, usable state but is no longer being actively developed; support/maintenance will be provided as time allows.](https://img.shields.io/badge/Repo%20Status-Inactive-A6A82D.svg)](https://www.repostatus.org/#inactive)
-[![OSF
-DOI](https://img.shields.io/badge/OSF-10.17605/OSF.IO/WHJ92-1284C5.svg)](https://doi.org/10.17605/OSF.IO/WHJ92)
+[![OSF DOI](https://img.shields.io/badge/OSF-10.17605/OSF.IO/WHJ92-1284C5.svg)](https://doi.org/10.17605/OSF.IO/WHJ92)
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](http://creativecommons.org/publicdomain/zero/1.0/)
 <!-- badges: end -->
 
 ## Overview
 
-This report provides a reproducible pipeline for processing [DATASUS](https://datasus.saude.gov.br/) data on the [Gini Index](https://en.wikipedia.org/wiki/Gini_coefficient) of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010. The main goal is to provide a transparent and reliable workflow for processing these data, supporting research and informed public policy decisions.
+This report provides a reproducible pipeline for processing [DATASUS](https://datasus.saude.gov.br/) data on the [Gini Index](https://en.wikipedia.org/wiki/Gini_coefficient) of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010. The main goal is to provide an open and reliable workflow for processing these data, supporting research and informed public policy decisions.
 
 ## Data Availability
+
+::: {style="text-align: left;"}
+[![](https://img.shields.io/badge/OSF-10.17605/OSF.IO/WHJ92-1284C5.svg)](https://doi.org/10.17605/OSF.IO/WHJ92)
+:::
 
 The processed data are available in both `csv` and `rds` formats via a dedicated repository on the Open Science Framework ([OSF](https://osf.io/)), accessible [here](https://doi.org/10.17605/OSF.IO/WHJ92). A metadata file is included alongside the validated data. You can also access these files directly from R using the [`osfr`](https://docs.ropensci.org/osfr/) package.
 
@@ -26,7 +29,7 @@ A backup copy of the raw data is also available in OSF. You can access it [here]
 
 ### Source of Data
 
-The data used in this report were sourced from the [DATASUS](https://datasus.saude.gov.br/) platform, which provides data on the [Gini Index](https://en.wikipedia.org/wiki/Gini_coefficient) of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010 [@datasusa]. These data are derived from the Population Census conducted by the Brazilian Institute of Geography and Statistics ([IBGE](https://www.ibge.gov.br/)).
+The data used in this report were sourced from the Department of Informatics of the Brazilian Unified Health System ([DATASUS](https://datasus.saude.gov.br/)) platform, which provides data on the [Gini Index](https://en.wikipedia.org/wiki/Gini_coefficient) of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010 [@datasusa]. These data are derived from the Population Census conducted by the Brazilian Institute of Geography and Statistics ([IBGE](https://www.ibge.gov.br/)).
 
 For technical information about the raw dataset, see the official [technical note](http://tabnet.datasus.gov.br/cgi/ibge/censo/Indice_Gini_Renda_Domiciliar.pdf) (in Portuguese).
 
@@ -50,7 +53,7 @@ The Tidyverse [code style guide](https://style.tidyverse.org/) and [design princ
 
 ### Reproducibility
 
-The pipeline is fully reproducible and can be run again at any time. See the [README](https://github.com/danielvartan/datasus-gini-index/blob/main/README.md) file in the code repository to learn how to run them.
+The pipeline is fully reproducible and can be run again at any time. See the [README](https://github.com/danielvartan/datasus-gini-index/blob/main/README.md) file in the code repository to learn how to run it.
 
 ## Setting the Environment
 
@@ -294,13 +297,13 @@ metadata <-
   labelled::`var_label<-`(
     list(
       year = "Census year",
-      region_code = "IBGE code of the region",
-      region = "Name of the region",
-      state_code = "IBGE code of the state",
-      state = "Name of the state",
-      federal_unit = "Name of the federal unit",
-      municipality_code = "IBGE code of the municipality",
-      municipality = "Name of the municipality",
+      region_code = "IBGE region code",
+      region = "Region name",
+      state_code = "IBGE state code",
+      state = "State name",
+      federal_unit = "Federal unit name",
+      municipality_code = "IBGE municipality code",
+      municipality = "Municipality name",
       gini_index = "Gini Index of per capita household income"
     )
   ) |>
@@ -338,7 +341,8 @@ metadata |> readr::write_csv(here::here("data", "metadata.csv"))
 metadata |> readr::write_rds(here::here("data", "metadata.rds"))
 ```
 
-<!-- Uploading the data to OSF (optional) -->
+<!-- ## Uploading the Data to OSF (Optional) -->
+
 <!-- Only repository administrators can upload data to OSF. -->
 <!-- To enable uploads, set your `OSF_PAT` environment variable with a valid OSF personal access token. -->
 
@@ -447,16 +451,6 @@ data |>
 grDevices::dev.off()
 ```
 
-## Acknowledgments
-
-![](images/sustentarea-icon.svg){style="width: 15%;"}
-
-This work is part of the [Sustentarea](https://www.fsp.usp.br/sustentarea) Research and Extension Group's project: *Global syndemic: The impact of anthropogenic climate change on the health and nutrition of children under five years old attended by Brazil's public health system (SUS)*.
-
-![](images/cnpq-logo.svg){style="width: 25%;"}
-
-This work was supported by the Conselho Nacional de Desenvolvimento Científico e Tecnológico - Brazil ([CNPq](https://www.gov.br/cnpq/)).
-
 ## How to Cite
 
 To cite this work, please use the following format:
@@ -484,6 +478,16 @@ A BibTeX entry for LaTeX users is
 :::
 
 This content is licensed under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/), placing these materials in the public domain. You may freely copy, modify, distribute, and use this work, even for commercial purposes, without permission or attribution.
+
+## Acknowledgments
+
+![](images/sustentarea-icon.svg){style="width: 15%;"}
+
+This work is part of the [Sustentarea](https://www.fsp.usp.br/sustentarea) Research and Extension Group project: *Global syndemic: The impact of anthropogenic climate change on the health and nutrition of children under five years old attended by Brazil's public health system (SUS)*.
+
+![](images/cnpq-logo.svg){style="width: 25%;"}
+
+This work was supported by the Conselho Nacional de Desenvolvimento Científico e Tecnológico - Brazil ([CNPq](https://www.gov.br/cnpq/)).
 
 ## References {.unnumbered}
 

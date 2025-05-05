@@ -4,21 +4,21 @@
     "href": "index.html#overview",
     "title": "",
     "section": "Overview",
-    "text": "Overview\nThis report provides a reproducible pipeline for processing DATASUS data on the Gini Index of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010. The main goal is to provide a transparent and reliable workflow for processing these data, supporting research and informed public policy decisions."
+    "text": "Overview\nThis report provides a reproducible pipeline for processing DATASUS data on the Gini Index of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010. The main goal is to provide an open and reliable workflow for processing these data, supporting research and informed public policy decisions."
   },
   {
     "objectID": "index.html#data-availability",
     "href": "index.html#data-availability",
     "title": "",
     "section": "Data Availability",
-    "text": "Data Availability\nThe processed data are available in both csv and rds formats via a dedicated repository on the Open Science Framework (OSF), accessible here. A metadata file is included alongside the validated data. You can also access these files directly from R using the osfr package.\nA backup copy of the raw data is also available in OSF. You can access it here."
+    "text": "Data Availability\n\n\n\nThe processed data are available in both csv and rds formats via a dedicated repository on the Open Science Framework (OSF), accessible here. A metadata file is included alongside the validated data. You can also access these files directly from R using the osfr package.\nA backup copy of the raw data is also available in OSF. You can access it here."
   },
   {
     "objectID": "index.html#methods",
     "href": "index.html#methods",
     "title": "",
     "section": "Methods",
-    "text": "Methods\nSource of Data\nThe data used in this report were sourced from the DATASUS platform, which provides data on the Gini Index of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010 (Instituto de Pesquisas Econômicas e Aplicadas & Instituto Brasileiro de Geografia e Estatística, n.d.). These data are derived from the Population Census conducted by the Brazilian Institute of Geography and Statistics (IBGE).\nFor technical information about the raw dataset, see the official technical note (in Portuguese).\nData Munging\nThe data munging followed the data science workflow outlined by Wickham et al. (2023), as illustrated in Figure 1. All processes were made using the Quarto publishing system (Allaire et al., n.d.), the R programming language (R Core Team, n.d.) and several R packages.\nThe tidyverse and rOpenSci peer-reviewed package ecosystem and other R packages adherents of the tidy tools manifesto (Wickham, 2023) were prioritized. All processes were made in order to provide result transparency and reproducibility.\n\n\nFigure 1: Data science workflow created by Wickham, Çetinkaya-Runde, and Grolemund.\n\n\nSource: Reproduced from Wickham et al. (2023).\n\n\n\nCode Style\nThe Tidyverse code style guide and design principles were followed to ensure consistency and enhance readability.\nReproducibility\nThe pipeline is fully reproducible and can be run again at any time. See the README file in the code repository to learn how to run them."
+    "text": "Methods\nSource of Data\nThe data used in this report were sourced from the Department of Informatics of the Brazilian Unified Health System (DATASUS) platform, which provides data on the Gini Index of per capita household income by Brazilian municipality for the years 1991, 2000, and 2010 (Instituto de Pesquisas Econômicas e Aplicadas & Instituto Brasileiro de Geografia e Estatística, n.d.). These data are derived from the Population Census conducted by the Brazilian Institute of Geography and Statistics (IBGE).\nFor technical information about the raw dataset, see the official technical note (in Portuguese).\nData Munging\nThe data munging followed the data science workflow outlined by Wickham et al. (2023), as illustrated in Figure 1. All processes were made using the Quarto publishing system (Allaire et al., n.d.), the R programming language (R Core Team, n.d.) and several R packages.\nThe tidyverse and rOpenSci peer-reviewed package ecosystem and other R packages adherents of the tidy tools manifesto (Wickham, 2023) were prioritized. All processes were made in order to provide result transparency and reproducibility.\n\n\nFigure 1: Data science workflow created by Wickham, Çetinkaya-Runde, and Grolemund.\n\n\nSource: Reproduced from Wickham et al. (2023).\n\n\n\nCode Style\nThe Tidyverse code style guide and design principles were followed to ensure consistency and enhance readability.\nReproducibility\nThe pipeline is fully reproducible and can be run again at any time. See the README file in the code repository to learn how to run it."
   },
   {
     "objectID": "index.html#setting-the-environment",
@@ -81,7 +81,7 @@
     "href": "index.html#data-dictionary",
     "title": "",
     "section": "Data Dictionary",
-    "text": "Data Dictionary\n\nCodemetadata &lt;-\n  data |&gt;\n  labelled::`var_label&lt;-`(\n    list(\n      year = \"Census year\",\n      region_code = \"IBGE code of the region\",\n      region = \"Name of the region\",\n      state_code = \"IBGE code of the state\",\n      state = \"Name of the state\",\n      federal_unit = \"Name of the federal unit\",\n      municipality_code = \"IBGE code of the municipality\",\n      municipality = \"Name of the municipality\",\n      gini_index = \"Gini Index of per capita household income\"\n    )\n  ) |&gt;\n  labelled::generate_dictionary(details = \"full\") |&gt;\n  labelled::convert_list_columns_to_character()\n\n\n\nCodemetadata\n\n\n  \n\n\n\n\nCodedata"
+    "text": "Data Dictionary\n\nCodemetadata &lt;-\n  data |&gt;\n  labelled::`var_label&lt;-`(\n    list(\n      year = \"Census year\",\n      region_code = \"IBGE region code\",\n      region = \"Region name\",\n      state_code = \"IBGE state code\",\n      state = \"State name\",\n      federal_unit = \"Federal unit name\",\n      municipality_code = \"IBGE municipality code\",\n      municipality = \"Municipality name\",\n      gini_index = \"Gini Index of per capita household income\"\n    )\n  ) |&gt;\n  labelled::generate_dictionary(details = \"full\") |&gt;\n  labelled::convert_list_columns_to_character()\n\n\n\nCodemetadata\n\n\n  \n\n\n\n\nCodedata"
   },
   {
     "objectID": "index.html#saving-the-valid-data",
@@ -98,13 +98,6 @@
     "text": "Visualizing the Data\nThe Gini Index is a measure of income inequality within a population, ranging from 0 to 1. A value close to 0 indicates a perfectly equal income distribution, while a value close to 1 indicates total inequality.\n\nCodebrand_div_palette &lt;- function(x) {\n  brandr:::make_color_ramp(\n    n_prop = x,\n    colors = c(\n      brandr::get_brand_color(\"dark-red-triadic-blue\"),\n      # brandr::get_brand_color(\"white\"),\n      brandr::get_brand_color_mix(\n        position = 950,\n        color_1 = \"dark-red\",\n        color_2 = \"dark-red-triadic-blue\",\n        alpha = 0.5\n      ),\n      brandr::get_brand_color(\"dark-red\")\n    )\n  )\n}\n\n\n\nCodedata |&gt;\n  dplyr::filter(year == 2010) |&gt;\n  tidyr::drop_na(gini_index) |&gt;\n  plotr:::plot_hist(\n    col = \"gini_index\",\n    density_line_color = \"red\",\n    x_label = \"Gini Index\",\n    print = FALSE\n  ) +\n  ggplot2::xlim(0, 1) +\n  ggplot2::labs(\n    title = paste0(\n      \"Gini Index of Per Capita Household Income by Brazilian Municipality\"\n    ),\n    subtitle = \"Year: 2010\",\n    caption = \"Source: DATASUS/IPEA/IBGE\"\n  )\n\n\n\n\n\n\n\n\nCodedata |&gt;\n  dplyr::filter(year == 2010) |&gt;\n  tidyr::drop_na(gini_index) |&gt;\n  plotr:::plot_brazil_municipality(\n    col_fill = \"gini_index\",\n    col_code = \"municipality_code\",\n    year = plotr:::get_closest_geobr_year(2010, type = \"municipality\"),\n    comparable_areas = FALSE,\n    reverse = TRUE,\n    limits = c(0, 1),\n    breaks = seq(0, 1, 0.25),\n    palette = brand_div_palette,\n    print = FALSE\n  ) +\n  ggplot2::labs(\n    title = paste0(\n      \"Gini Index of Per Capita Household Income by Brazilian Municipality\"\n    ),\n    subtitle = \"Year: 2010\",\n    caption = \"Source: DATASUS/IPEA/IBGE\"\n  )"
   },
   {
-    "objectID": "index.html#acknowledgments",
-    "href": "index.html#acknowledgments",
-    "title": "",
-    "section": "Acknowledgments",
-    "text": "Acknowledgments\n\nThis work is part of the Sustentarea Research and Extension Group’s project: Global syndemic: The impact of anthropogenic climate change on the health and nutrition of children under five years old attended by Brazil’s public health system (SUS).\n\nThis work was supported by the Conselho Nacional de Desenvolvimento Científico e Tecnológico - Brazil (CNPq)."
-  },
-  {
     "objectID": "index.html#how-to-cite",
     "href": "index.html#how-to-cite",
     "title": "",
@@ -119,10 +112,17 @@
     "text": "License\n\n\n\nThis content is licensed under CC0 1.0 Universal, placing these materials in the public domain. You may freely copy, modify, distribute, and use this work, even for commercial purposes, without permission or attribution."
   },
   {
+    "objectID": "index.html#acknowledgments",
+    "href": "index.html#acknowledgments",
+    "title": "",
+    "section": "Acknowledgments",
+    "text": "Acknowledgments\n\nThis work is part of the Sustentarea Research and Extension Group project: Global syndemic: The impact of anthropogenic climate change on the health and nutrition of children under five years old attended by Brazil’s public health system (SUS).\n\nThis work was supported by the Conselho Nacional de Desenvolvimento Científico e Tecnológico - Brazil (CNPq)."
+  },
+  {
     "objectID": "index.html#references",
     "href": "index.html#references",
     "title": "",
     "section": "References",
-    "text": "References\n\n\nAllaire, J. J., Teague, C., Xie, Y., & Dervieux, C. (n.d.). Quarto [Computer software]. Zenodo. https://doi.org/10.5281/ZENODO.5960048\n\n\nInstituto de Pesquisas Econômicas e Aplicadas, & Instituto Brasileiro de Geografia e Estatística. (n.d.). Índice de Gini da renda domiciliar per capita segundo município – Período: 1991, 2000 e 2010 [Gini index of per capita household income by municipality – Period: 1991, 2000, and 2010] [Data set]. DATASUS - Tabnet. Retrieved November 16, 2023, from http://tabnet.datasus.gov.br/cgi/ibge/censo/cnv/ginibr.def\n\n\nR Core Team. (n.d.). R: A language and environment for statistical computing [Computer software]. R Foundation for Statistical Computing. https://www.R-project.org\n\n\nWickham, H. (2023). The tidy tools manifesto. Tidyverse. https://tidyverse.tidyverse.org/articles/manifesto.html\n\n\nWickham, H., Çetinkaya-Rundel, M., & Grolemund, G. (2023). R for data science: Import, tidy, transform, visualize, and model data (2nd ed.). O’Reilly Media. https://r4ds.hadley.nz"
+    "text": "References\n\n\nAllaire, J. J., Teague, C., Xie, Y., & Dervieux, C. (n.d.). Quarto [Computer software]. Zenodo. https://doi.org/10.5281/ZENODO.5960048\n\n\nInstituto de Pesquisas Econômicas e Aplicadas, & Instituto Brasileiro de Geografia e Estatística. (n.d.). Índice de Gini da renda domiciliar per capita segundo município – Período: 1991, 2000 e 2010 [Gini Index of per capita household income by municipality – Period: 1991, 2000, and 2010] [Data set]. DATASUS - Tabnet. Retrieved November 16, 2023, from http://tabnet.datasus.gov.br/cgi/ibge/censo/cnv/ginibr.def\n\n\nR Core Team. (n.d.). R: A language and environment for statistical computing [Computer software]. R Foundation for Statistical Computing. https://www.R-project.org\n\n\nWickham, H. (2023). The tidy tools manifesto. Tidyverse. https://tidyverse.tidyverse.org/articles/manifesto.html\n\n\nWickham, H., Çetinkaya-Rundel, M., & Grolemund, G. (2023). R for data science: Import, tidy, transform, visualize, and model data (2nd ed.). O’Reilly Media. https://r4ds.hadley.nz"
   }
 ]
